@@ -1737,6 +1737,31 @@ DE.controllers.Main.DisableVersionHistory(); \
 			SEND_MESSAGE_TO_BROWSER_PROCESS(message);
 			return true;
 		}
+		else if (name == "LocalFileGetRaw")
+		{
+#ifndef CEF_V8_SUPPORT_TYPED_ARRAYS
+			retval = CefV8Value::CreateUndefined();
+#else
+			std::wstring sFilePath = arguments[0]->GetStringValue().ToWString();
+
+			if (NSFile::CFileBinary::Exists(sFilePath))
+			{
+				BYTE* pData = NULL;
+				DWORD dwFileLen = 0;
+				NSFile::CFileBinary::ReadAllBytes(sFilePath, &pData, dwFileLen);
+
+				if (0 != dwFileLen)
+					retval = CefV8Value::CreateArrayBuffer((void*)pData, (size_t)dwFileLen, new CAscCefV8ArrayBufferReleaseCallback());
+				else
+					retval = CefV8Value::CreateUndefined();
+			}
+			else
+			{
+				retval = CefV8Value::CreateUndefined();
+			}
+#endif
+			return true;
+		}
 		else if (name == "execCommand")
 		{
 			std::string sCommand = arguments[0]->GetStringValue().ToString();
@@ -4514,7 +4539,7 @@ class ClientRenderDelegate : public client::ClientAppRenderer::Delegate {
 
 	CefRefPtr<CefV8Handler> handler = pWrapper;
 
-	#define EXTEND_METHODS_COUNT 176
+	#define EXTEND_METHODS_COUNT 177
 	const char* methods[EXTEND_METHODS_COUNT] = {
 		"Copy",
 		"Paste",
@@ -4586,6 +4611,8 @@ class ClientRenderDelegate : public client::ClientAppRenderer::Delegate {
 
 		"LocalFileGetImageUrl",
 		"LocalFileGetImageUrlFromOpenFileDialog",
+
+		"LocalFileGetRaw",
 
 		"checkAuth",
 
@@ -5300,6 +5327,13 @@ else if (window.editor) window.editor.asc_nativePrint(undefined, undefined";
 				NSStringUtils::string_replaceA(sDocInfo, "\n", "<!--break-->");
 				sCode += ",\"";
 				sCode += sDocInfo;
+				sCode += "\"";
+			}
+			if (4 <= message->GetArgumentList()->GetSize())
+			{
+				std::string sFile = message->GetArgumentList()->GetString(3).ToString();
+				sCode += ",\"";
+				sCode += sFile;
 				sCode += "\"";
 			}
 

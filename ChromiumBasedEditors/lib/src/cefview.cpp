@@ -5585,6 +5585,12 @@ void CCefView_Private::LocalFile_IncrementCounter()
 
 			if (browser)
 			{
+				// Список параметров для asc_initAdvancedOptions
+				// 1 - код ошибки
+				// 2 - hash
+				// 3 - info
+				// 4 - путь к файлу
+
 				CefRefPtr<CefProcessMessage> message = CefProcessMessage::Create("onlocaldocument_additionalparams");
 				message->GetArgumentList()->SetInt(0, m_nLocalFileOpenError);
 
@@ -5600,6 +5606,12 @@ void CCefView_Private::LocalFile_IncrementCounter()
 					if (!sDocInfo.empty())
 						message->GetArgumentList()->SetString(2, sDocInfo);
 				}
+				else
+				{
+					message->GetArgumentList()->SetString(1, "");
+					message->GetArgumentList()->SetString(2, "");
+				}
+				message->GetArgumentList()->SetString(3, m_oLocalInfo.m_oInfo.m_sFileSrc);
 
 				SEND_MESSAGE_TO_RENDERER_PROCESS(browser, message);
 			}
